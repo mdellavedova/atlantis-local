@@ -1,0 +1,44 @@
+// Build and push 'nexmo-atlantis' docker image
+// to our internal repository:
+// https://eu-west-1.console.aws.amazon.com/ecr/repositories/private/920763156836/nexmo-atlantis
+
+// The corresponding Jenkins job can be found here:
+// https://jenkins.nexmo.cloud/job/BUILD_nexmo-atlantis/5/console
+
+pipeline {
+  agent any
+  parameters {
+    string(name: 'TAG', defaultValue: '0.15.1', description: 'Docker tag to publish to ECR')
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+        sh """
+        cd atlantis/build
+        docker build . -t "nexmo-atlantis:\${TAG}"
+        """
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        sh """
+        set +x
+        \$(aws ecr get-login --no-include-email --region eu-west-1)
+        set -x
+        docker tag "nexmo-atlantis:\${TAG}" "920763156836.dkr.ecr.eu-west-1.amazonaws.com/nexmo-atlantis:\${TAG}"
+        docker push "920763156836.dkr.ecr.eu-west-1.amazonaws.com/nexmo-atlantis:\${TAG}"
+        """
+      }
+    }
+
+    stage('Cleanup') {
+      steps {
+        sh """
+        docker rmi nexmo-atlantis:\${TAG}
+        """
+      }
+    }
+  }
+}

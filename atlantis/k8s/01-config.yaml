@@ -1,0 +1,60 @@
+# config map that is used to configure atlantis during container start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atlantis-server-conf
+  labels:
+    name: atlantis-server-conf
+    configVersion: "0.1"
+  namespace: atlantis-vcs
+data:
+  repos.yaml: |-
+    repos:
+      - id: /.*/
+
+        # apply_requirements sets the Apply Requirements for all repos that match.
+        apply_requirements: [approved, mergeable] # allowed_overrides specifies which keys can be overridden by this repo in
+        # its atlantis.yaml file.
+        allowed_overrides: [workflow, apply_requirements]
+
+    workflows:
+      NexmoWorkflow:
+        plan:
+          steps:
+          - run: git fetch origin master:refs/remotes/origin/master && git diff origin/master --diff-filter=AM --name-only --relative | grep '.*\.tf' | xargs -I% terraform fmt -check=true -diff=true -write=false %
+          - init:
+              extra_args: ["-upgrade"]
+          - plan
+        apply:
+          steps:
+          - apply
+
+      NexmoWorkflowTerragrunt:
+        plan:
+          steps:
+          - env:
+              name: TERRAGRUNT_TFPATH
+              command: 'echo "terraform${ATLANTIS_TERRAFORM_VERSION}"'
+          - run: git fetch origin master:refs/remotes/origin/master && git diff origin/master --diff-filter=AM --name-only --relative | grep '.*\.tf' | xargs -I% terraform fmt -check=true -diff=true -write=false %
+          - run: terragrunt plan -no-color -out=$PLANFILE
+        apply:
+          steps:
+          - env:
+              name: TERRAGRUNT_TFPATH
+              command: 'echo "terraform${ATLANTIS_TERRAFORM_VERSION}"'
+          - run: terragrunt apply -no-color $PLANFILE
+
+      NexmoWorkflowTerragruntv2:
+        plan:
+          steps:
+          - env:
+              name: TERRAGRUNT_TFPATH
+              command: 'echo "terraform${ATLANTIS_TERRAFORM_VERSION}"'
+          - run: ../../tools/prep_hcl.py
+          - run: terragrunt plan-all -no-color -out=$PLANFILE
+        apply:
+          steps:
+          - env:
+              name: TERRAGRUNT_TFPATH
+              command: 'echo "terraform${ATLANTIS_TERRAFORM_VERSION}"'
+          - run: terragrunt apply-all --terragrunt-non-interactive -no-color

@@ -1,0 +1,19 @@
+# internal ingress configuration for atlantis.dev.nexmo.cloud
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: atlantis-ingress
+  annotations:
+    kubernetes.io/ingress.class: ingress-controller-internal-nginx
+    nginx.ingress.kubernetes.io/default-backend: atlantis
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  namespace: atlantis-vcs
+spec:
+  rules:
+    - host: atlantis.eu-west-2.nexmo.xxx
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: atlantis
+              servicePort: atlantis
