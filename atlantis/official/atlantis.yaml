@@ -28,7 +28,7 @@ spec:
 
         ### GitHub Config ###
         - name: ATLANTIS_GH_USER
-          value: <YOUR_GITHUB_USER> # 3i. If you're using GitHub replace <YOUR_GITHUB_USER> with the username of your Atlantis GitHub user without the `@`.
+          value: mdellavedova # 3i. If you're using GitHub replace <YOUR_GITHUB_USER> with the username of your Atlantis GitHub user without the `@`.
         - name: ATLANTIS_GH_TOKEN
           valueFrom:
             secretKeyRef:
